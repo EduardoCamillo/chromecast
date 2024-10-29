@@ -1,35 +1,59 @@
-console.warn("CORINTIAS!")
-const context = cast.framework.CastReceiverContext.getInstance();
-const playerManager = context.getPlayerManager();
+window['__onGCastApiAvailable'] = function(isAvailable) {
+    if (isAvailable) {
+      initializeCastApi();
+    }
+  };
 
-var url = "https://www.eitvplay.com.br/videos/36/playlist.m3u8?format=auto"
+  function initializeCastApi() {
+    const context = cast.framework.CastContext.getInstance();
+    context.setOptions({
+      receiverApplicationId: '7BE3B01C',
+      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+    });
+  }
 
-function getMediaId(mediaId){
-    console.warn(mediaId.id);
-}
+  const castButton = document.getElementById("castButton");
+  castButton.addEventListener("click", () => {
+    const castContext = cast.framework.CastContext.getInstance();
+    castContext.requestSession().then(() => {
+      console.log("Conectado ao Chromecast!");
+    }).catch((error) => {
+      console.log("Erro ao conectar:", error);
+    });
+  });
 
-// $.ajax({
-//     url: url,
-//     method: 'GET',
-//   }).done(function  (data, textStatus, jqXHR) {
-//     console.log( "success", data.media.id);
-//     console.log( "success textStatus:" , textStatus);
-//     console.log( "success jqXHR:" , jqXHR);
-//     getMediaId(data.media)
-//   }).fail(function(data, textStatus) {
-//     if (data.status == 403) {
-//       context.stop();
-//     }
-//   });
-playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, loadRequestData => {
-    loadRequestData.media = url
+  function loadMedia() {
+    console.warn("botao ativo")
+    const mediaInfo = new chrome.cast.media.MediaInfo("https://www.eitvplay.com.br/videos/36", "video/mp4");
+    const request = new chrome.cast.media.LoadRequest(mediaInfo);
 
+    cast.framework.CastContext.getInstance().getCurrentSession()
+      .loadMedia(request)
+      .then(() => {
+        console.log("Mídia carregada com sucesso!");
+      })
+      .catch((error) => {
+        console.log("Erro ao carregar mídia:", error);
+      });
+  }
 
-});
+  function pauseMedia() {
+    const session = cast.framework.CastContext.getInstance().getCurrentSession();
+    if (session) {
+      const media = session.getMediaSession();
+      media.pause();
+    }
+  }
 
-console.log(typeof(teste))
-//console.warn(teste.data.media.id)
+  function playMedia() {
+    const session = cast.framework.CastContext.getInstance().getCurrentSession();
+    if (session) {
+      const media = session.getMediaSession();
+      media.play();
+    }
+  }
 
-context.start();
-
-
+  function stopCasting() {
+    const castContext = cast.framework.CastContext.getInstance();
+    castContext.endCurrentSession(true);
+  }
